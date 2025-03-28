@@ -15,5 +15,6 @@ async function getData() {
 	}
 }
 
+getData()
 int = setInterval(getData, 1000);
 window.addEventListener('beforeunload', () => clearInterval(int));
