@@ -1,8 +1,6 @@
-# from datetime import datetime
 import json
 from machine import UART, Pin
 
-# from bme680 import *
 from time import sleep
 
 onPin = Pin("LED", Pin.OUT)
@@ -23,12 +21,12 @@ def send_at_command(command, response_timeout=0.1):
         print("No response from BLE module.")
 
 
-send_at_command("+++")
-send_at_command("ATI")
-send_at_command("AT+GAPDEVNAME=BalloonModuleBLE")
-send_at_command("AT+GATTADDSERVICE?")
-send_at_command("AT+GAPGETCONN")
-send_at_command("+++")
+# send_at_command("+++")
+# send_at_command("ATI")
+# send_at_command("AT+GAPDEVNAME=BalloonModuleBLE")
+# send_at_command("AT+GATTADDSERVICE?")
+# send_at_command("AT+GAPGETCONN")
+# send_at_command("+++")
 
 # custom protocol:
 # [START]...[END]
@@ -36,12 +34,8 @@ send_at_command("+++")
 count = 0
 while True:
     count += 1
-    # data = json.dumps({"message": f"hello #{count}"})
-    # msg = f"[START]{data}[END]"
-    # BLEuart.write(msg)
-    # print(msg)
     data = json.dumps(
-        {"moduleID": 2, "moduleName": "Balloon", "count": count, "message": "hello"}
+        {"moduleID": 2, "moduleName": "Balloon", "count": count, "windspeed": 6}
     )
 
     msg = f"[START]{data}[END]"

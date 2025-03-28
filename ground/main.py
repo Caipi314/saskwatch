@@ -33,12 +33,12 @@ def send_at_command(command, response_timeout=0.1):
         print("No response from BLE module.")
 
 
-send_at_command("+++")
-send_at_command("ATI")
-send_at_command("AT+GAPDEVNAME=GroundModuleBLE")
-send_at_command("AT+GATTADDSERVICE?")
-send_at_command("AT+GAPGETCONN")
-send_at_command("+++")
+# send_at_command("+++")
+# send_at_command("ATI")
+# send_at_command("AT+GAPDEVNAME=GroundModuleBLE")
+# send_at_command("AT+GATTADDSERVICE?")
+# send_at_command("AT+GAPGETCONN")
+# send_at_command("+++")
 
 
 print("LED starts flashing...")

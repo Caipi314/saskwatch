@@ -7,12 +7,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
-
     def do_GET(self):
-        # self.send_response(200)
-        # self.end_headers()
-        # self.wfile.write(b"Hello, World!")
-
         if self.path == "/":
             self.path = "/index.html"
 
@@ -56,45 +51,71 @@ def full_msg(msg):
         print(f"ERROR: {msg}")
 
 
-def setConnected(isConnected):
-    global connected
-    # print("connected", connected)
-    connected = isConnected
-
-    # def connect():
-    #     if connected:
-    #         return
-    #     print("Interval reached and not connected. Attempting connection")
+# async def every(__seconds: float, func, *args, **kwargs):
+#     while True:
+#         func(*args, **kwargs)
+#         await asyncio.sleep(__seconds)
 
 
-thread1 = threading.Thread(
-    target=asyncio.run,
-    args=(
-        uart_terminal(full_msg, setConnected, "GroundModuleBLE"),
-    ),  # NEED BOTH WEIRD COMMAS
-)
-thread2 = threading.Thread(
-    target=asyncio.run,
-    args=(
-        uart_terminal(full_msg, setConnected, "BalloonModuleBLE"),
-    ),  # NEED BOTH WEIRD COMMAS
-)
-try:
-    thread1.start()
-    thread2.start()
-except asyncio.CancelledError as e:
-    print(e)
+#     await asyncio.sleep(5)
+#     startReconnect()
+#     # thread1.start()
 
 
-# from threading import Timer
+def BLEThread(name):
+    async def onDisconnect(name):
+        thread.cancel()
+        print(f"{name} disconnected")
+
+    thread = threading.Thread(
+        target=asyncio.run,
+        args=(uart_terminal(full_msg, onDisconnect, name),),  # NEED BOTH WEIRD COMMAS
+    )
 
 
-# def interval_connect():
-#     connect()
-#     Timer(15.0, interval_connect).start()
+def connect(thread):
+    # try:
+    try:
+        thread.start()
+    except Exception as e:
+        print("thread err", e)
+        return
 
 
-# Timer(0.0, interval_connect).start()
+names = ["GroundModuleBLE", "BalloonModuleBLE"]
+connect(BLEThread(names[0]))
+connect(BLEThread(names[1]))
+# startReconnect(names[1])
+
+# except:
+#     return
+
+
+# thread1 = threading.Thread(
+#     target=asyncio.run,
+#     args=(
+#         uart_terminal(full_msg, onDisconnect, "GroundModuleBLE"),
+#     ),  # NEED BOTH WEIRD COMMAS
+# )
+
+
+# thread1 = threading.Thread(
+#     target=asyncio.run,
+#     args=(
+#         uart_terminal(full_msg, onDisconnect, "GroundModuleBLE"),
+#     ),  # NEED BOTH WEIRD COMMAS
+# )
+# # thread2 = threading.Thread(
+# #     target=asyncio.run,
+# #     args=(
+# #         uart_terminal(full_msg, setConnected, "BalloonModuleBLE"),
+# #     ),  # NEED BOTH WEIRD COMMAS
+# # )
+# try:
+#     thread1.start()
+#     # thread2.start()
+# except asyncio.CancelledError as e:
+#     print(e)
 
 
 httpd = HTTPServer(("", 3000), SimpleHTTPRequestHandler)

@@ -9,9 +9,7 @@ async function getData() {
 
 		const json = await response.json();
 		const str = JSON.stringify(json, null, 2);
-		// console.log(str);
 		el.innerHTML = str;
-		// el.textContent = str;
 	} catch (error) {
 		console.error(error.message);
 	}

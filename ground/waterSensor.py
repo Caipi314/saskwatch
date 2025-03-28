@@ -9,9 +9,10 @@ b = 446
 
 l = []
 while True:
+    V_sys = 5
     V_bits = adc.read_u16()
-    V_volt = 3.3 / 65535 * V_bits
-    R_s = 1000 * (3.3 / V_volt - 1)
+    V_volt = V_sys / 65535 * V_bits
+    R_s = 1000 * (V_sys / V_volt - 1)
 
     d = m * R_s + b
 

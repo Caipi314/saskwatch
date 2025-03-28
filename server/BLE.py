@@ -18,7 +18,7 @@ UART_TX_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 buffer = ""
 
 
-async def uart_terminal(onMsg, setConnected=lambda x: x, BLEName="not a real device"):
+async def uart_terminal(onMsg, onDisconnect=lambda x: x, BLEName="not a real device"):
     print(f"Looking for device with name {BLEName}")
     # setConnected(False)
     device = await BleakScanner.find_device_by_filter(
@@ -34,13 +34,12 @@ async def uart_terminal(onMsg, setConnected=lambda x: x, BLEName="not a real dev
         # print("buffer", buffer)
         print("Device was disconnected, goodbye.")
         # cancelling all tasks effectively ends the program
-        setConnected(False)
-        for task in asyncio.all_tasks():
-            task.cancel()
+        onDisconnect(BLEName)
+        # for task in asyncio.all_tasks():
+        #     task.cancel()
 
     def handle_rx(_: BleakGATTCharacteristic, data):
         # print("an rx", data.decode("utf-8"))
-        setConnected(True)
         global buffer
         startsMsg = "[START]"
         endsMsg = "[END]"
@@ -59,11 +58,7 @@ async def uart_terminal(onMsg, setConnected=lambda x: x, BLEName="not a real dev
 
     async with BleakClient(device, disconnected_callback=handle_disconnect) as client:
         await client.start_notify(UART_TX_CHAR_UUID, handle_rx)
-        setConnected(True)
 
         loop = asyncio.get_running_loop()
         while True:
             _data = await loop.run_in_executor(None, sys.stdin.buffer.readline)
-
-    # task is cancelled on disconnect, so we ignore this error
-    # pass
