@@ -1,6 +1,6 @@
 import sys
 import json
-from machine import I2C, UART, Pin
+from machine import I2C, UART, Pin, ADC
 from utime import sleep
 from bme680 import *
 
@@ -14,6 +14,11 @@ bleVcc = Pin(3, Pin.OUT)
 bleVcc.on()
 BLEuart = UART(1, baudrate=9600, tx=Pin(4), rx=Pin(5))  # UART0 on GP0/GP1
 
+waterPin = ADC(Pin(28, mode=Pin.IN))
+
+# from fit
+m = -0.1532
+b = 446
 
 i = I2C(id=0, scl=Pin(13), sda=Pin(12))
 if len(i.scan()) != 1:
@@ -33,6 +38,18 @@ def send_at_command(command, response_timeout=0.1):
         print("No response from BLE module.")
 
 
+def senseWater():
+    V_sys = 5
+    V_bits = waterPin.read_u16()
+    V_volt = V_sys / 65535 * V_bits
+    R_s = 1000 * (V_sys / V_volt - 1)
+
+    d = m * R_s + b
+    if d < 2.5:
+        return 0
+    return d
+
+
 # send_at_command("+++")
 # send_at_command("ATI")
 # send_at_command("AT+GAPDEVNAME=GroundModuleBLE")
@@ -45,6 +62,7 @@ print("LED starts flashing...")
 count = 0
 while True:
     count += 1
+    water = senseWater()
     # print(bme.temperature, bme.humidity, bme.pressure, bme.gas)
     data = json.dumps(
         {
@@ -56,7 +74,8 @@ while True:
             "temp": round(bme.temperature, 2),
             "humidity": round(bme.humidity, 2),
             "pressure": round(bme.pressure / 10, 2),
-            "units": "°C, %, kPa",
+            "water": water,
+            "units": "deg C, %, kPa",
         }
     )
 

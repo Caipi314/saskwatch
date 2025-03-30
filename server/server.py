@@ -5,6 +5,8 @@ import threading
 from BLE import uart_terminal
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
+from FWI import FWI
+
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -37,29 +39,39 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"404 - Not Found")
 
 
-latestData = [{"balloon module loading": True}, {"ground module loading": True}]
+latestData = [
+    {"FWI": None},
+    {"balloon": False, "loading": True},
+    {"ground": False, "loading": True},
+]
 connected = False
+
+fwi = FWI(month=4)
 
 
 def full_msg(msg):
     global latestData
+    msgData = {}
     try:
         msgData = json.loads(msg)
-        latestData[msgData["moduleID"] - 1] = msgData
-        print("latestData", msgData)
-    except:
+    except Exception as e:
+        print(e)
         print(f"ERROR: {msg}")
+        return
 
+    latestData[msgData["moduleID"]] = msgData
+    print("latestData", msgData)
 
-# async def every(__seconds: float, func, *args, **kwargs):
-#     while True:
-#         func(*args, **kwargs)
-#         await asyncio.sleep(__seconds)
-
-
-#     await asyncio.sleep(5)
-#     startReconnect()
-#     # thread1.start()
+    if "loading" in latestData[1] or "loading" in latestData[2]:
+        print("not enough data for FWI")
+        return
+    # T, H, W, r_0
+    T = latestData[1]["temp"]
+    H = latestData[1]["humidity"]
+    W = latestData[2]["windspeed"]
+    r_0 = latestData[1]["water"]
+    newFwi = fwi.addDay(T, H, W, r_0)
+    latestData[0]["FWI"] = newFwi
 
 
 def BLEThread(name):
@@ -71,10 +83,10 @@ def BLEThread(name):
         target=asyncio.run,
         args=(uart_terminal(full_msg, onDisconnect, name),),  # NEED BOTH WEIRD COMMAS
     )
+    return thread
 
 
 def connect(thread):
-    # try:
     try:
         thread.start()
     except Exception as e:
@@ -85,38 +97,6 @@ def connect(thread):
 names = ["GroundModuleBLE", "BalloonModuleBLE"]
 connect(BLEThread(names[0]))
 connect(BLEThread(names[1]))
-# startReconnect(names[1])
-
-# except:
-#     return
-
-
-# thread1 = threading.Thread(
-#     target=asyncio.run,
-#     args=(
-#         uart_terminal(full_msg, onDisconnect, "GroundModuleBLE"),
-#     ),  # NEED BOTH WEIRD COMMAS
-# )
-
-
-# thread1 = threading.Thread(
-#     target=asyncio.run,
-#     args=(
-#         uart_terminal(full_msg, onDisconnect, "GroundModuleBLE"),
-#     ),  # NEED BOTH WEIRD COMMAS
-# )
-# # thread2 = threading.Thread(
-# #     target=asyncio.run,
-# #     args=(
-# #         uart_terminal(full_msg, setConnected, "BalloonModuleBLE"),
-# #     ),  # NEED BOTH WEIRD COMMAS
-# # )
-# try:
-#     thread1.start()
-#     # thread2.start()
-# except asyncio.CancelledError as e:
-#     print(e)
-
 
 httpd = HTTPServer(("", 3000), SimpleHTTPRequestHandler)
 try:

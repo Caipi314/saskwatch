@@ -20,26 +20,34 @@ def send_at_command(command, response_timeout=0.1):
     else:
         print("No response from BLE module.")
 
+
 adc = ADC(26)  # ADC0 corresponds to GP26 on Pico
+
 
 def get_voltage(pin):
     return (pin.read_u16() * 3.3) / 65535  # Convert digital value to analog voltage
 
+
 def wind_speed(voltage):
-    return voltage  # Linear assumption, may need adjustment
+    return voltage * 100  # Linear assumption, may need adjustment
+
 
 solenoid_relay = Pin(16, Pin.OUT)  # GP16 as output
+
+
 def trigger_pin(delay):
     solenoid_relay.value(1)
     sleep(delay)
     solenoid_relay.value(0)
 
+
 # Define rotary encoder pins
-DT_Pin = Pin(0, Pin.IN, Pin.PULL_UP)  # GP0 as input with pull-up
-CLK_Pin = Pin(1, Pin.IN, Pin.PULL_UP)  # GP1 as input with pull-up
+DT_Pin = Pin(20, Pin.IN, Pin.PULL_UP)  # GP0 as input with pull-up
+CLK_Pin = Pin(21, Pin.IN, Pin.PULL_UP)  # GP1 as input with pull-up
 
 value = 0
 previous_value = 1
+
 
 def rotary_changed():
     global previous_value, value
@@ -68,28 +76,30 @@ def rotary_changed():
 count = 0
 while True:
     count += 1
-<<<<<<< HEAD
-    data = json.dumps(
-        {"moduleID": 2, "moduleName": "Balloon", "count": count, "windspeed": 6}
-=======
     # data = json.dumps({"message": f"hello #{count}"})
     # msg = f"[START]{data}[END]"
     # BLEuart.write(msg)
     # print(msg)
-    windSpeed = wind_speed()
-    rotary_changed(get_voltage(adc))
-
+    windSpeed = wind_speed(get_voltage(adc))
+    rotary_changed()
 
     data = json.dumps(
-        {"moduleID": 2, "moduleName": "Balloon", "count": count, "message": "hello", "Direction": value*18, "windspeed": windSpeed}
->>>>>>> f84756d2f4dbc62d704f661305b0191a0b70b938
+        {
+            "moduleID": 2,
+            "moduleName": "Balloon",
+            "count": count,
+            "direction": value * 18,
+            "windspeed": windSpeed,
+        }
     )
 
     msg = f"[START]{data}[END]"
     BLEuart.write(msg)
     print(msg)
 
+    sleep(0.4)
     onPin.high()
-    sleep(0.2)
+    # # sleep(0.2)
+    sleep(0.4)
     onPin.low()
-    sleep(0.8)
+    # sleep(0.1)

@@ -15,7 +15,9 @@ UART_RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_TX_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 
 
-buffer = ""
+# buffer = ""
+
+buffers = {"BalloonModuleBLE": "", "GroundModuleBLE": ""}
 
 
 async def uart_terminal(onMsg, onDisconnect=lambda x: x, BLEName="not a real device"):
@@ -30,30 +32,35 @@ async def uart_terminal(onMsg, onDisconnect=lambda x: x, BLEName="not a real dev
         print("no matching device found")
         sys.exit(1)
 
-    def handle_disconnect(_: BleakClient):
+    async def handle_disconnect(_: BleakClient):
         # print("buffer", buffer)
         print("Device was disconnected, goodbye.")
         # cancelling all tasks effectively ends the program
-        onDisconnect(BLEName)
+        await onDisconnect(BLEName)
         # for task in asyncio.all_tasks():
         #     task.cancel()
 
     def handle_rx(_: BleakGATTCharacteristic, data):
         # print("an rx", data.decode("utf-8"))
-        global buffer
+        # global buffer
         startsMsg = "[START]"
         endsMsg = "[END]"
-        data = data.decode("utf-8")
+        try:
+            data = data.decode("utf-8")
+        except:
+            print("Can't decode", data)
+            return
 
-        buffer += data
+        buffers[BLEName] += data
+        # buffer += data
 
         # process buffer
-        start = buffer.find(startsMsg)
-        end = buffer.find(endsMsg)
+        start = buffers[BLEName].find(startsMsg)
+        end = buffers[BLEName].find(endsMsg)
         if start != 1 and end != -1 and end > start:
-            latestMsg = buffer[start + len(startsMsg) : end]
+            latestMsg = buffers[BLEName][start + len(startsMsg) : end]
 
-            buffer = buffer[end + len(endsMsg) :]
+            buffers[BLEName] = buffers[BLEName][end + len(endsMsg) :]
             onMsg(latestMsg)
 
     async with BleakClient(device, disconnected_callback=handle_disconnect) as client:
